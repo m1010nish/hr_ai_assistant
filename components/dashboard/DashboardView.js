@@ -13,10 +13,18 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
 import Skeleton from "@/components/ui/Skeleton";
 import { useCandidates } from "@/hooks/useCandidates";
+import { useIsClient } from "@/hooks/useIsClient";
 import { useRecentConversations } from "@/hooks/useConversations";
 import { RESUME_STATUS } from "@/lib/constants";
 import { formatDate, formatRelativeDate, defaultResumeFor } from "@/lib/utils";
 
+/*
+| Depends on the visitor's local clock, so it can only run on the client.
+| This page is statically prerendered — the build happens once, long before
+| anyone opens it — and baking a greeting into that HTML guarantees a
+| hydration mismatch for most visitors. It is rendered as a subtitle behind
+| useIsClient() rather than as the page title, so nothing shifts on load.
+*/
 function greeting(date = new Date()) {
   const hour = date.getHours();
   if (hour < 12) return "Good morning";
@@ -40,6 +48,7 @@ export default function DashboardView() {
   const candidatesState = useCandidates();
   const { allCandidates } = candidatesState;
   const [uploadOpen, setUploadOpen] = useState(false);
+  const isClient = useIsClient();
 
   const recent = useRecentConversations(allCandidates);
 
@@ -69,8 +78,12 @@ export default function DashboardView() {
   return (
     <div className="scroll-thin h-full overflow-y-auto">
       <PageHeader
-        title={greeting()}
-        description="Review candidates and resume insights."
+        title="Dashboard"
+        description={
+          isClient
+            ? `${greeting()}. Review candidates and resume insights.`
+            : "Review candidates and resume insights."
+        }
         actions={
           <>
             <Button variant="primary" onClick={() => setUploadOpen(true)}>
